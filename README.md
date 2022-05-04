@@ -11,7 +11,7 @@ The nested fields can be accessed using either the field name, or the field inde
 Except for the wrapped vector, every field in the chain must be immutable. The final type to be mutated must be bits type.
 
 Examples:
-```julia-repl
+```julia
 julia> using MutatePlainDataArray
 
 julia> a = [1, 2, 3];
