@@ -1,6 +1,6 @@
 name = "MutatePlainDataArray"
 uuid = "3b0f367b-da20-4531-811a-c13cc92422b5"
-authors = ["drel <drel.sohu.com@gmail.com> and contributors"]
+authors = ["Haoran Ni <haoranni@terpmail.umd.edu> and contributors"]
 version = "0.1.0"
 
 [compat]
