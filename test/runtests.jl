@@ -43,7 +43,7 @@ TC() = TC(Val(1), Val(2), Val(3))
     @test ismutabletype(TBM)
     @test isbitstype(TC)
 
-    @testset "ARef validation" begin
+    @testset "aref validation" begin
         v1 = [1, 2]
         v2 = [TAB(1, 2), TAB(3, 4)]
         v3 = [TAI(1, "a"), TAI(2, "b")]
@@ -54,24 +54,24 @@ TC() = TC(Val(1), Val(2), Val(3))
         t3 = (TAI(1, "a"), TAI(2, "b"))
         t4 = (TAM(1, 2), TAM(3, 4))
 
-        @test ARef(v1) isa Any
-        @test ARef(v2) isa Any
-        @test ARef(v3) isa Any
-        @test_throws ErrorException ARef(v4)
-        @test ARef(v5) isa Any
-        @test_throws MethodError ARef(t1)
-        @test_throws MethodError ARef(t2)
-        @test_throws MethodError ARef(t3)
-        @test_throws MethodError ARef(t4)
+        @test aref(v1) isa Any
+        @test aref(v2) isa Any
+        @test aref(v3) isa Any
+        @test_throws ErrorException aref(v4)
+        @test aref(v5) isa Any
+        @test_throws MethodError aref(t1)
+        @test_throws MethodError aref(t2)
+        @test_throws MethodError aref(t3)
+        @test_throws MethodError aref(t4)
 
-        @test ARef([1,2]) isa Any
-        @test ARef(([1,2],)[1]) isa Any
-        @test_throws MethodError ARef((1,2))
+        @test aref([1,2]) isa Any
+        @test aref(([1,2],)[1]) isa Any
+        @test_throws MethodError aref((1,2))
     end
 
-    @testset "ARef indexing" begin
+    @testset "aref indexing" begin
         v1 = [TAI(1, "a"), TAI(2, "b")]
-        r1 = ARef(v1)
+        r1 = aref(v1)
 
         @test r1[1] isa MutatePlainDataArray.ElementRef
         @test_throws BoundsError r1[0]
@@ -80,8 +80,8 @@ TC() = TC(Val(1), Val(2), Val(3))
         v2 = zeros(5, 5)
         # Currently, multi-indexing array directly is not supported.
         view2 = view(v2, 1:2:5, :)
-        r2 = ARef(v2)
-        rview2 = ARef(view2)
+        r2 = aref(v2)
+        rview2 = aref(view2)
 
         @test r2[25] isa MutatePlainDataArray.ElementRef
         @test_throws BoundsError r2[26]
@@ -97,7 +97,7 @@ TC() = TC(Val(1), Val(2), Val(3))
 
     @testset "Field type chaining" begin
         v1 = [TBI(1, TAI(2, "a")), TBI(3, TAI(4, "b"))]
-        r1 = ARef(v1)
+        r1 = aref(v1)
 
         @test MutatePlainDataArray.atype(r1) == Vector{TBI}
         e1 = r1[1]
@@ -128,7 +128,7 @@ TC() = TC(Val(1), Val(2), Val(3))
         @test_throws BoundsError e1._3
 
         v2 = [TC(), TC()]
-        r2 = ARef(v2)
+        r2 = aref(v2)
         e2 = r2[2]
         @test MutatePlainDataArray.atype(e2) == Vector{TC}
         @test MutatePlainDataArray.eltype(e2) == TC
@@ -142,7 +142,7 @@ TC() = TC(Val(1), Val(2), Val(3))
 
     @testset "Field mutation" begin
         v1 = [TBI(1, TAI(2, "a")), TBI(3, TAI(4, "b"))]
-        r1 = ARef(v1)
+        r1 = aref(v1)
 
         @test_throws ErrorException r1[1][] = TBI(5, TAI(6, "c"))
         @test_throws ErrorException r1[1].a[] = TAI(6, "c")
