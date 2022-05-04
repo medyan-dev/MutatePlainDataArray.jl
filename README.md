@@ -51,4 +51,4 @@ Stacktrace:
 
 The mutation provided by this package is
 - **Efficient**. Under the hood, the mutation is achieved by pointer load/store, where the address offset is known at type inference time.
-- **Safe**. Compile-time type check is enforced. Reference to the original vector is obtained to prevent garbage collection. Bounds check is performed unless `@inbounds` is used.
+- **Safe**. Compile-time type check is enforced. Reference to the original vector is obtained to prevent garbage collection. Bounds check is performed unless `@inbounds` is used. This package is inspired by and acts as a safer counterpart to [UnsafePointers.jl](https://github.com/cjdoris/UnsafePointers.jl).
