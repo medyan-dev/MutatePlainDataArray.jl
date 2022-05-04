@@ -1,6 +1,7 @@
 using MutatePlainDataArray
 using BenchmarkTools
 using Setfield
+using BangBang
 
 struct BAB
     a::Int
@@ -22,10 +23,13 @@ BAI1() = BAI1(0, 0, 0, 0, BAB(), zeros(100, 100))
 
 
 function inbounds_setinner!_mutate(v, i)
-    @inbounds ARef(v)[i].bab.a[] += 1
+    @inbounds aref(v)[i].bab.a[] += 1
 end
 function inbounds_setinner!_setfield(v, i)
     @inbounds @set! v[i].bab.a += 1
+end
+function inbounds_setinner!_bangbang(v, i)
+    @inbounds @set!! v[i].bab.a += 1
 end
 
 function runbench()
@@ -33,11 +37,14 @@ function runbench()
 
     bench_mutate = @benchmark inbounds_setinner!_mutate($v, 20)
     bench_setfield = @benchmark inbounds_setinner!_setfield($v, 20)
+    bench_bangbang = @benchmark inbounds_setinner!_bangbang($v, 20)
 
     @show bench_mutate
     display(bench_mutate)
     @show bench_setfield
     display(bench_setfield)
+    @show bench_bangbang
+    display(bench_bangbang)
 end
 
 runbench()
