@@ -1,5 +1,6 @@
 using MutatePlainDataArray
 using Test
+using Compat
 
 struct TAB
     x::Int
