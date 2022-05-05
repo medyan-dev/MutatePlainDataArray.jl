@@ -167,7 +167,7 @@ end
 atype(::ARef{T}) where T = T
 atype(::Type{ARef{T}}) where T = T
 atype(::ElementRef{T,ET}) where {T,ET} = T
-atype(::Type{ElementRef{T,ET}}) where {T,ET} = ET
+atype(::Type{ElementRef{T,ET}}) where {T,ET} = T
 eltype(::ElementRef{T,ET}) where {T,ET} = ET
 eltype(::Type{ElementRef{T,ET}}) where {T,ET} = ET
 
