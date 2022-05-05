@@ -5,8 +5,9 @@ export aref
 #---------------------------------------
 # Common functions.
 #---------------------------------------
-unsafe_pointer(v::Array, index::Integer) = pointer(v, index)
-unsafe_pointer(v::SubArray, indices...) = pointer(v, indices)
+unsafe_pointer(v) = pointer(v)
+unsafe_pointer(v, i) = pointer(v, i)
+unsafe_pointer(v, i1, i2, is...) = pointer(v, CartesianIndex((i1, i2, is...)))
 
 function field_offset_type_impl(::Type{T}, ::Val{S}) where {T,S}
     if !isstructtype(T)
