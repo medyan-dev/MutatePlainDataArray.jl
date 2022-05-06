@@ -23,7 +23,7 @@ BAI1() = BAI1(0, 0, 0, 0, BAB(), zeros(100, 100))
 
 
 function inbounds_setinner!_mutate(v, i)
-    @inbounds aref(v)[i].bab.a[] += 1
+    @inbounds aref(v)[i].bab.a += 1
 end
 function inbounds_setinner!_setfield(v, i)
     @inbounds @set! v[i].bab.a += 1

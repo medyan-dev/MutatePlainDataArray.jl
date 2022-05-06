@@ -76,7 +76,8 @@ TC() = TC(Val(1), Val(2), Val(3))
 
         @test r1[1] isa MutatePlainDataArray.ElementRef
         @test_throws BoundsError r1[0]
-        @test_throws Exception r1[1] = TAI(3, "c")
+        r1[1] = TAI(3, "c")
+        @test v1 == [TAI(3, "c"), TAI(2, "b")]
 
         v2 = zeros(5, 5)
         # Currently, multi-indexing array directly is not supported.
@@ -145,25 +146,24 @@ TC() = TC(Val(1), Val(2), Val(3))
         v1 = [TBI(1, TAI(2, "a")), TBI(3, TAI(4, "b"))]
         r1 = aref(v1)
 
-        @test_throws ErrorException r1[1][] = TBI(5, TAI(6, "c"))
-        @test_throws ErrorException r1[1].a[] = TAI(6, "c")
-        @test_throws ErrorException r1[1].a.s[] = "c"
-        @test_throws ErrorException r1[1].x = -1
-        @test_throws ErrorException r1[1].a.x = -1
+        @test_throws ErrorException r1[1].a = TAI(6, "c")
+        @test_throws ErrorException r1[1].a.s = "c"
+        @test_throws MethodError r1[1].x[] = -1
+        @test_throws MethodError r1[1].a.x[] = -1
 
-        r1[1].x[] = 50
+        r1[1].x = 50
         @test v1 == [TBI(50, TAI(2, "a")), TBI(3, TAI(4, "b"))]
-        r1[1].x[] *= 2
+        r1[1].x *= 2
         @test v1 == [TBI(100, TAI(2, "a")), TBI(3, TAI(4, "b"))]
-        r1[2].x[] <<= 1
+        r1[2].x <<= 1
         @test v1 == [TBI(100, TAI(2, "a")), TBI(6, TAI(4, "b"))]
 
-        r1[1].a.x[] = 200
+        r1[1].a.x = 200
         @test v1 == [TBI(100, TAI(200, "a")), TBI(6, TAI(4, "b"))]
-        r1[1].a.x[] /= 2
+        r1[1].a.x /= 2
         @test v1 == [TBI(100, TAI(100, "a")), TBI(6, TAI(4, "b"))]
-        r1[2].a.x[] %= 3
+        r1[2].a.x %= 3
         @test v1 == [TBI(100, TAI(100, "a")), TBI(6, TAI(1, "b"))]
-        @test_throws MethodError r1[1].a.x[] = "some string"
+        @test_throws MethodError r1[1].a.x = "some string"
     end
 end

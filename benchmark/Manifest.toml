@@ -137,6 +137,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
 [[deps.MutatePlainDataArray]]
+deps = ["Compat"]
 path = ".."
 uuid = "3b0f367b-da20-4531-811a-c13cc92422b5"
 version = "0.1.0"
