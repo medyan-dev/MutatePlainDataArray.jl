@@ -132,7 +132,7 @@ Base.@propagate_inbounds function Base.setindex!(v::ARef{T}, x, indices...) wher
     v.r[indices...] = x
 end
 
-function getvalue(r::ElementRef{T,ET}) where {T, ET}
+function Base.getindex(r::ElementRef{T,ET}) where {T, ET}
     if isbitstype(ET)
         rr = getfield(r, :r)
         GC.@preserve rr unsafe_load(getfield(r, :p))
@@ -140,7 +140,7 @@ function getvalue(r::ElementRef{T,ET}) where {T, ET}
         error("Type $ET is not bits type.")
     end
 end
-function setvalue!(r::ElementRef{T,ET}, val) where {T, ET}
+function Base.setindex!(r::ElementRef{T,ET}, val) where {T, ET}
     if isbitstype(ET)
         rr = getfield(r, :r)
         GC.@preserve rr unsafe_store!(getfield(r, :p), convert(ET, val))
@@ -162,12 +162,12 @@ function Base.getproperty(r::ElementRef{T,ET}, name::Symbol) where {T, ET}
     ElementRef(getfield(r, :r), Base.unsafe_convert(Ptr{type}, getfield(r, :p)) + offset)
 end
 function Base.setproperty!(r::ElementRef{T,ET}, name::Symbol, x) where {T, ET}
-    setvalue!(getproperty(r, name), x)
+    setindex!(getproperty(r, name), x)
 end
 
 macro forward_binary_op(ops...)
     defop(op::Symbol) = quote
-        Base.$op(r::ElementRef{T,ET}, x) where {T,ET} = $op(getvalue(r), x)
+        Base.$op(r::ElementRef{T,ET}, x) where {T,ET} = $op(getindex(r), x)
     end
     Expr(:block, defop.(ops)...)
 end

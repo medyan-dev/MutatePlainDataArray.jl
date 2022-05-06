@@ -148,8 +148,8 @@ TC() = TC(Val(1), Val(2), Val(3))
 
         @test_throws ErrorException r1[1].a = TAI(6, "c")
         @test_throws ErrorException r1[1].a.s = "c"
-        @test_throws MethodError r1[1].x[] = -1
-        @test_throws MethodError r1[1].a.x[] = -1
+        @test_throws ErrorException r1[1].a[] = TAI(6, "c")
+        @test_throws ErrorException r1[1].a.s[] = "c"
 
         r1[1].x = 50
         @test v1 == [TBI(50, TAI(2, "a")), TBI(3, TAI(4, "b"))]
