@@ -2,7 +2,6 @@ module MutatePlainDataArray
 
 export aref
 
-using Compat
 
 #---------------------------------------
 # Common functions.

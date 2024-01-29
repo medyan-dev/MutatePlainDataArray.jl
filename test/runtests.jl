@@ -1,6 +1,5 @@
-using MutatePlainDataArray
+using MutatePlainDataArray: MutatePlainDataArray, aref
 using Test
-using Compat
 
 struct TAB
     x::Int
