@@ -113,6 +113,12 @@ end
         r1 = aref(v1)
         e1 = r1[1]
 
+        if VERSION ≥ v"1.12"
+            @test_throws FieldError e1.foo
+        else
+            @test_throws ErrorException e1.foo
+        end
+
         let e12 = e1.x
             @test_throws ErrorException e12.x
             @test_throws ErrorException e12.:1

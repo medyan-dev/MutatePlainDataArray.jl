@@ -28,7 +28,7 @@ function field_offset_type_impl(::Type{T}, ::Val{S}) where {T,S}
         findex = findfirst(==(S), fs)
         if isnothing(findex)
             if VERSION ≥ v"1.12"
-                FieldError(T, S)
+                throw(FieldError(T, S))
             else
                 error("Cannot find field $S in type $T.")
             end
