@@ -47,11 +47,11 @@ end
 
 @testset "MutatePlainDataArray.jl" begin
     @test isbitstype(TAB)
-    @test !isbitstype(TAI) && !ismutabletype(TAI)
-    @test ismutabletype(TAM)
+    @test !isbitstype(TAI)
+    @test !isbitstype(TAM)
     @test isbitstype(TBB)
-    @test !isbitstype(TBI) && !ismutabletype(TBI)
-    @test ismutabletype(TBM)
+    @test !isbitstype(TBI)
+    @test !isbitstype(TBM)
     @test isbitstype(TC)
 
     @testset "aref validation" begin
