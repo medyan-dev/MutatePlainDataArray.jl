@@ -1,13 +1,10 @@
 name = "MutatePlainDataArray"
 uuid = "3b0f367b-da20-4531-811a-c13cc92422b5"
 authors = ["Haoran Ni <haoranni@terpmail.umd.edu> and contributors"]
-version = "0.3.0"
+version = "0.4.0"
 
 [compat]
 julia = "1.7"
 
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test"]
+[workspace]
+projects = ["test"]
