@@ -6,9 +6,18 @@ export aref
 #---------------------------------------
 # Common functions.
 #---------------------------------------
-unsafe_pointer(v) = pointer(v)
-unsafe_pointer(v, i) = pointer(v, i)
-unsafe_pointer(v, i1, i2, is...) = pointer(v, CartesianIndex((i1, i2, is...)))
+
+# A is a strided array
+# This doesn't do bounds checking
+function indices_to_byte_offset(A::AbstractArray{T,N}, ind::CartesianIndex{N}) where {T, N}
+    offset::Int = 0
+    for d in 1:N
+        stride_in_bytes = stride(A, d) * Base.elsize(typeof(A))
+        first_idx = first(axes(A, d))
+        offset += (ind[d] - first_idx) * stride_in_bytes
+    end
+    offset
+end
 
 function field_offset_type_impl(::Type{T}, ::Val{S}) where {T,S}
     if !isstructtype(T)
@@ -18,15 +27,11 @@ function field_offset_type_impl(::Type{T}, ::Val{S}) where {T,S}
         fs = fieldnames(T)
         findex = findfirst(==(S), fs)
         if isnothing(findex)
-            # Cannot find the field name.
-            s = string(S)
-            if startswith(s, '_')
-                # Try to parse it as a number.
-                findex = tryparse(Int, s[2:end])
+            if VERSION ≥ v"1.12"
+                FieldError(T, S)
+            else
+                error("Cannot find field $S in type $T.")
             end
-        end
-        if isnothing(findex)
-            error("Cannot find field $S in type $T.")
         end
     elseif S isa Integer
         findex = S
@@ -43,7 +48,7 @@ end
 Given struct `type` and the field name or index `S`, return the offset and type of the field.
 
 If `S` is an integer, it is represents the index of the field.
-If `S` is a symbol, the function will first try to find the field with that name. If the name is not found, it will try to parse it with form `_index` where index is the field index.
+If `S` is a symbol, the function will try to find the field with that name.
 """
 @generated function field_offset_type(::Type{T}, ::Val{S}) where {T,S}
     offset, type = field_offset_type_impl(T, Val(S))
@@ -58,8 +63,8 @@ end
 struct ARef{T}
     r::T
     function ARef(v::AbstractArray{ET,N}) where {ET,N}
-        if ismutabletype(ET)
-            error("Element type $ET is not immutable.")
+        if !isbitstype(ET)
+            error("Element type $ET is not isbitstype.")
         end
         new{typeof(v)}(v)
     end
@@ -70,11 +75,11 @@ end
 
 Wraps an array, allowing mutating immutable plain data fields using the following syntax:
 ```julia
-    aref(v)[i].a.b._i._j[] = val
+    aref(v)[i].a.b[] = val
 ```
 
-The nested fields can be accessed using either the field name, or the field index prefixed with `_`.
-Except for the wrapped vector, every field in the chain must be immutable. The final type to be mutated must be bits type.
+The nested fields can be accessed using either the field name, or the field index with `getproperty`.
+The wrapped vector must implement the strided arrays interface and must have `isbitstype` element type.
 
 Examples:
 ```julia-repl
@@ -89,73 +94,64 @@ julia> a
  2
  3
 
-julia> b = [(tup=(1, 2.5), s="a"), (tup=(2, 4.5), s="b")];
+julia> b = [(;tup=(1, 2.5), s=4), (;tup=(2, 4.5), s=5)];
  
-julia> aref(b)[1].tup._2[] = Inf
+julia> aref(b)[1].tup.:2[] = Inf
 Inf
 
 julia> b
-2-element Vector{NamedTuple{(:tup, :s), Tuple{Tuple{Int64, Float64}, String}}}:
- (tup = (1, Inf), s = "a")
- (tup = (2, 4.5), s = "b")
+2-element Vector{@NamedTuple{tup::Tuple{Int64, Float64}, s::Int64}}:
+ (tup = (1, Inf), s = 4)
+ (tup = (2, 4.5), s = 5)
 
-julia> aref(b)[2]._1._1[] *= 100
+julia> (aref(b)[2].:1).:1[] *= 100
 200
 
 julia> b
-2-element Vector{NamedTuple{(:tup, :s), Tuple{Tuple{Int64, Float64}, String}}}:
- (tup = (1, Inf), s = "a")
- (tup = (200, 4.5), s = "b")
-
-julia> aref(b)[1].s[] = "invalid"
-ERROR: The field type String (field s in NamedTuple{(:tup, :s), Tuple{Tuple{Int64, Float64}, String}}) is not immutable.
-Stacktrace:
- ...
+2-element Vector{@NamedTuple{tup::Tuple{Int64, Float64}, s::Int64}}:
+ (tup = (1, Inf), s = 4)
+ (tup = (200, 4.5), s = 5)
 ```
 """
 aref(v::AbstractArray) = ARef(v)
 
-struct ElementRef{T, ET}
-    # Keep the reference to original vector to keep it alive.
-    r::T
-    # The actual pointer to the element.
-    p::Ptr{ET}
+struct ElementRef{T, RET, ET}
+    # Keep the cconvert of the original vector to keep it alive.
+    rcconv::T
+    # The offset of pointer to the element.
+    offset::Int
 end
-
 
 Base.@propagate_inbounds function Base.getindex(v::ARef{T}, indices...) where T
-    @boundscheck checkbounds(v.r, indices...)
-    ElementRef(v.r, unsafe_pointer(v.r, indices...))
+    ind = CartesianIndices(v.r)[indices...]::CartesianIndex
+    rcconv = Base.cconvert(Ptr{Base.eltype(v.r)}, v.r)
+    ElementRef{typeof(rcconv), Base.eltype(v.r), Base.eltype(v.r)}(rcconv, indices_to_byte_offset(v.r, ind))
 end
 
-function Base.getindex(r::ElementRef{T,ET}) where {T, ET}
-    if isbitstype(ET)
-        rr = getfield(r, :r)
-        GC.@preserve rr unsafe_load(getfield(r, :p))
-    else
-        error("Type $ET is not bits type.")
+function Base.getindex(r::ElementRef{T,RET,ET}) where {T, RET, ET}
+    rcconv = getfield(r, :rcconv)
+    GC.@preserve rcconv begin
+        p = Ptr{ET}(Base.unsafe_convert(Ptr{RET}, rcconv))
+        p += getfield(r, :offset)
+        unsafe_load(p)
     end
 end
-function Base.setindex!(r::ElementRef{T,ET}, val) where {T, ET}
-    if isbitstype(ET)
-        rr = getfield(r, :r)
-        GC.@preserve rr unsafe_store!(getfield(r, :p), convert(ET, val))
-    else
-        error("Type $ET is not bits type.")
+function Base.setindex!(r::ElementRef{T,RET,ET}, val) where {T, RET, ET}
+    rcconv = getfield(r, :rcconv)
+    GC.@preserve rcconv begin
+        p = Ptr{ET}(Base.unsafe_convert(Ptr{RET}, rcconv))
+        p += getfield(r, :offset)
+        unsafe_store!(p, convert(ET, val))
     end
 end
 
-@generated function chain_offsettype(::ElementRef{T,ET}, ::Val{S}) where {T, ET, S}
+function Base.getproperty(r::ElementRef{T,RET,ET}, S::Symbol) where {T, RET, ET}
     offset, type = field_offset_type(ET, Val(S))
-    if ismutabletype(type)
-        error("The field type $type (field $S in $ET) is not immutable.")
-    end
-    :(($offset, $type))
+    ElementRef{T, RET, type}(getfield(r, :rcconv), getfield(r, :offset) + offset)
 end
-
-function Base.getproperty(r::ElementRef{T,ET}, name::Symbol) where {T, ET}
-    offset, type = chain_offsettype(r, Val(name))
-    ElementRef(getfield(r, :r), Base.unsafe_convert(Ptr{type}, getfield(r, :p)) + offset)
+function Base.getproperty(r::ElementRef{T,RET,ET}, S::Int) where {T, RET, ET}
+    offset, type = field_offset_type(ET, Val(S))
+    ElementRef{T, RET, type}(getfield(r, :rcconv), getfield(r, :offset) + offset)
 end
 "This function should not be called."
 function Base.setproperty!(::ElementRef{T,ET}, ::Symbol, x) where {T, ET}
@@ -168,10 +164,10 @@ end
 #---------------------------------------
 atype(::ARef{T}) where T = T
 atype(::Type{ARef{T}}) where T = T
-atype(::ElementRef{T,ET}) where {T,ET} = T
-atype(::Type{ElementRef{T,ET}}) where {T,ET} = T
-eltype(::ElementRef{T,ET}) where {T,ET} = ET
-eltype(::Type{ElementRef{T,ET}}) where {T,ET} = ET
+atype(::ElementRef{T,RET,ET}) where {T,RET,ET} = T
+atype(::Type{ElementRef{T,RET,ET}}) where {T,RET,ET} = T
+eltype(::ElementRef{T,RET,ET}) where {T,RET,ET} = ET
+eltype(::Type{ElementRef{T,RET,ET}}) where {T,RET,ET} = ET
 
 
 end

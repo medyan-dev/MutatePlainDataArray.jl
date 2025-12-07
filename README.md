@@ -4,14 +4,14 @@
 
 Enable mutating immutable plain data fields using `aref` wrapper, allowing mutating immutable plain data fields using the following syntax:
 ```julia
-    aref(v)[i].a.b._i._j[] = val
+    aref(v)[i].a.b[] = val
 ```
 
-The nested fields can be accessed using either the field name, or the field index prefixed with `_`.
-Except for the wrapped vector, every field in the chain must be immutable. The final type to be mutated must be bits type.
+The nested fields can be accessed using either the field name, or the field index with `getproperty`.
+The wrapped vector must implement the strided arrays interface and must have `isbitstype` element type.
 
 Examples:
-```julia
+```julia-repl
 julia> using MutatePlainDataArray
 
 julia> a = [1, 2, 3];
@@ -25,28 +25,23 @@ julia> a
  2
  3
 
-julia> b = [(tup=(1, 2.5), s="a"), (tup=(2, 4.5), s="b")];
+julia> b = [(;tup=(1, 2.5), s=4), (;tup=(2, 4.5), s=5)];
  
-julia> aref(b)[1].tup._2[] = Inf
+julia> aref(b)[1].tup.:2[] = Inf
 Inf
 
 julia> b
-2-element Vector{NamedTuple{(:tup, :s), Tuple{Tuple{Int64, Float64}, String}}}:
- (tup = (1, Inf), s = "a")
- (tup = (2, 4.5), s = "b")
+2-element Vector{@NamedTuple{tup::Tuple{Int64, Float64}, s::Int64}}:
+ (tup = (1, Inf), s = 4)
+ (tup = (2, 4.5), s = 5)
 
-julia> aref(b)[2]._1._1[] *= 100
+julia> (aref(b)[2].:1).:1[] *= 100
 200
 
 julia> b
-2-element Vector{NamedTuple{(:tup, :s), Tuple{Tuple{Int64, Float64}, String}}}:
- (tup = (1, Inf), s = "a")
- (tup = (200, 4.5), s = "b")
-
-julia> aref(b)[1].s[] = "invalid"
-ERROR: The field type String (field s in NamedTuple{(:tup, :s), Tuple{Tuple{Int64, Float64}, String}}) is not immutable.
-Stacktrace:
- ...
+2-element Vector{@NamedTuple{tup::Tuple{Int64, Float64}, s::Int64}}:
+ (tup = (1, Inf), s = 4)
+ (tup = (200, 4.5), s = 5)
 ```
 
 The mutation provided by this package is

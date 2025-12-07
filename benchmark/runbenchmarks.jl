@@ -17,9 +17,9 @@ struct BAI1
     c::Int
     d::Int
     bab::BAB
-    m::Matrix{Float64}
+    m::Float64
 end
-BAI1() = BAI1(0, 0, 0, 0, BAB(), zeros(100, 100))
+BAI1() = BAI1(0, 0, 0, 0, BAB(), 100)
 
 
 function inbounds_setinner!_mutate(v, i)
