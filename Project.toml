@@ -1,7 +1,7 @@
 name = "MutatePlainDataArray"
 uuid = "3b0f367b-da20-4531-811a-c13cc92422b5"
 authors = ["Haoran Ni <haoranni@terpmail.umd.edu> and contributors"]
-version = "1.0.0-dev"
+version = "1.0.0"
 
 [compat]
 julia = "1.6"

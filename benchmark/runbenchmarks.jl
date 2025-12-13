@@ -2,6 +2,9 @@ using MutatePlainDataArray
 using BenchmarkTools
 using Setfield
 using BangBang
+using StaticArrays
+
+M = @SMatrix(ones(10,10))
 
 struct BAB
     a::Int
@@ -17,9 +20,9 @@ struct BAI1
     c::Int
     d::Int
     bab::BAB
-    m::Float64
+    m::typeof(M)
 end
-BAI1() = BAI1(0, 0, 0, 0, BAB(), 100)
+BAI1() = BAI1(0, 0, 0, 0, BAB(), M)
 
 
 function inbounds_setinner!_mutate(v, i)
