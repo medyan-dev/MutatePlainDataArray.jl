@@ -23,23 +23,26 @@ function field_offset_type_impl(::Type{T}, ::Val{S}) where {T,S}
     if !isstructtype(T)
         error("$T is not struct type.")
     end
-    if S isa Symbol
-        fs = fieldnames(T)
-        findex = findfirst(==(S), fs)
-        if isnothing(findex)
-            if VERSION ≥ v"1.12"
-                throw(FieldError(T, S))
-            else
-                error("Cannot find field $S in type $T.")
-            end
-        end
-    elseif S isa Integer
-        findex = S
+    @static if VERSION ≥ v"1.13"
+        fieldoffset(T, S), fieldtype(T, S)
     else
-        error("$S is not a symbol or an integer.")
+        if S isa Symbol
+            fs = fieldnames(T)
+            findex = findfirst(==(S), fs)
+            if isnothing(findex)
+                if VERSION ≥ v"1.12"
+                    throw(FieldError(T, S))
+                else
+                    error("Cannot find field $S in type $T.")
+                end
+            end
+        elseif S isa Integer
+            findex = S
+        else
+            error("$S is not a symbol or an integer.")
+        end
+        fieldoffset(T, findex), fieldtype(T, findex)
     end
-
-    fieldoffset(T, findex), fieldtype(T, findex)
 end
 
 """
